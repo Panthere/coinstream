@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Sign In</h1>
+<form action="" method="post" name="RegisterForm">
+        {{ form.hidden_tag() }}
+        <p>
+            Preferred Unit of BitCoin: {{ form.unit_field() }}
+        </p>
+        <p>
+            Preferred Currency Conversion: {{ form.fiat_field() }}
+        </p>
+{% endblock %}
+
