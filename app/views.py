@@ -3,7 +3,7 @@ from flask import render_template, flash, redirect, session, url_for, \
 
 import requests as req
 
-from app import app
+from app import app, db
 from datetime import datetime
 from config import STREAMLABS_CLIENT_ID, STREAMLABS_CLIENT_SECRET
 
@@ -50,13 +50,34 @@ def sl_authorize():
                 'redirect_uri'  : 'http://cs.amperture.com:5000/sl_authorize'
     }
     headers = []
-    print token
 
-    check = req.post(token, data=tipcall, headers=headers).json()
-    print "Hello!"
-    print check
-    print "World!"
+    token_data = req.post(token, data=tipcall, headers=headers).json()
+    a_token = token_data['access_token']
+    r_token = token_data['refresh_token']
 
-    return "Hello World!"
+    return redirect(
+            url_for(
+                'register', 
+                a_token=a_token,
+                r_token=r_token
+            )
+    )
 
+@app.route('/register')
+def register():
+    a_token = request.args.get('a_token')
+    r_token = request.args.get('r_token')
+
+    new_user = User(
+            streamlabs_atoken = a_token,
+            streamlabs_rtoken = r_token,
+            #TODO:Make forms ready
+            fiat= 'USD',
+            unit= 'u',
+            addr= '1EnMhjCgoyVvhiN1SmeTYQgFgy1YZ5zEuj'
+    )
+    db.session.add(new_user)
+    db.session.commit()
+
+    return "Register Page"
 

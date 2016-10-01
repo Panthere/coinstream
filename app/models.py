@@ -29,7 +29,7 @@ class User(db.Model):
             lazy='dynamic')
 
     def __repr__(self):
-        return'<User %r>' %(self.nickname)
+        return'<User %r>' %(self.addr)
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
