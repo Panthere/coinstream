@@ -1,6 +1,6 @@
 from flask_wtf import Form
 from wtforms import StringField, BooleanField, TextAreaField, SelectField
-from wtforms.validators import Required, Length
+from wtforms.validators import Required, Length, DataRequired
 
 
 class RegisterForm(Form):
@@ -25,4 +25,7 @@ class RegisterForm(Form):
             choices = currencies,
             validators = [Required()])
 
+    addr_field = StringField(
+            u'BitCoin Address',
+            validators = [DataRequired()])
 

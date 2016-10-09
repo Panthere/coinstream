@@ -9,5 +9,12 @@
         <p>
             Preferred Currency Conversion: {{ form.fiat_field() }}
         </p>
+        <p>
+            BitCoin Address: {{ form.addr_field(size=40) }}
+            {% for error in form.addr_field.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+        </p>
+        <p><input type="submit" value="Complete Registration"></p>
 {% endblock %}
 

@@ -71,40 +71,43 @@ def sl_authorize():
             'access_token' : a_token
     }
 
-    print a_token
     user_access = requests.get(api_user, params=user_get_call)
 
-    print user_access.json()
+    session['twitch_name'] = user_access.json()['twitch']['name']
+    session['twitch_display'] = user_access.json()['twitch']['display_name']
+    session['access_token'] = a_token
+    session['refresh_token'] = r_token
     
 
     return redirect(
             url_for(
                 'callback2', 
-                a_token=a_token,
-                r_token=r_token
             )
     )
 
-@app.route('/callback2')
+@app.route('/callback2', methods=['GET', 'POST'])
 def callback2():
-    a_token = request.args.get('a_token')
-    r_token = request.args.get('r_token')
 
-    new_user = User(
-            streamlabs_atoken = a_token,
-            streamlabs_rtoken = r_token,
-            #TODO:Make forms ready
-            fiat= 'USD',
-            unit= 'u',
-            addr= '1EnMhjCgoyVvhiN1SmeTYQgFgy1YZ5zEuj',
-            social_id = 'Amp',
-            nickname = 'Amp'
+    form = RegisterForm()
+    if form.validate_on_submit():
+        new_user = User(
+                streamlabs_atoken = session['access_token'],
+                streamlabs_rtoken = session['refresh_token'],
+                fiat= form.fiat_field.data,
+                unit= form.unit_field.data,
+                addr= form.addr_field.data,
+                social_id = session['twitch_display'],
+                nickname = session['twitch_name']
 
-    )
-    '''
-    db.session.add(new_user)
-    db.session.commit()
-    '''
+        )
+        db.session.add(new_user)
+        db.session.commit()
+
+    return render_template(
+            'login.html',
+            title = 'Login',
+            form=form,
+            )
 
     return redirect(url_for('index'))
 
