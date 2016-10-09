@@ -4,6 +4,9 @@ from app import app, db
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    
+    social_id = db.Column(db.String(64), nullable=False, unique=True)
+    nickname = db.Column(db.String(64), nullable=False)
 
     # fiat currency user desires conversion to, ISO 4217 currencies accepted
     # e.g. "USD", "GBP", "EUR", etc.
