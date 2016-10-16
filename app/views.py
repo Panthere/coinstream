@@ -1,7 +1,8 @@
 from flask import render_template, flash, redirect, session, url_for, \
-        request, g
+        request, g, send_file
 
 from flask_login import current_user
+from flask_qrcode import QRcode
 
 import requests
 
@@ -13,6 +14,7 @@ from .forms import RegisterForm
 from .models import User
 
 import time
+import qrcode
 
 streamlabs_api_url = 'https://www.twitchalerts.com/api/v1.0/'
 
@@ -120,3 +122,22 @@ def register():
             "&response_type=code" +
             "&scope=donations.read+donations.create", code=302
     )
+
+@app.route('/donatecallback', methods=['GET', 'POST'])
+def donatecallback():
+    print request.args
+    return "Hello World!"
+
+@app.route('/tip')
+def tip():
+    from pycoin.key import Key
+    test_xpub = 'xpub6D4WvHcJsEdLjsbB3ot18dxHv7morZP9bBZ82Rjgb5FbpwqFtjSjywAryoTvZYgNWH3JTRWjn32sPSwWfyhZqk12VYtXPgHtyzub7NpCy1Q'
+    key = Key.from_text(test_xpub).subkey(0).subkey(0)
+    address = key.address(use_uncompressed=False)
+    btc_addr = 'bitcoin:' + address
+
+    print btc_addr
+
+    return render_template(
+            'tip.html',
+            btc_addr = btc_addr)
