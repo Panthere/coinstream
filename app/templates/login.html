@@ -1,20 +1,11 @@
+{% import "bootstrap/wtf.html" as wtf %}
+
 {% extends "base.html" %}
+
 {% block content %}
 <h1>Sign In</h1>
 <form action="" method="post" name="RegisterForm">
         {{ form.hidden_tag() }}
-        <p>
-            Preferred Unit of BitCoin: {{ form.unit_field() }}
-        </p>
-        <p>
-            Preferred Currency Conversion: {{ form.fiat_field() }}
-        </p>
-        <p>
-            BitCoin Address: {{ form.addr_field(size=40) }}
-            {% for error in form.addr_field.errors %}
-            <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-        <p><input type="submit" value="Complete Registration"></p>
+        {{ form|render_form() }}
 {% endblock %}
 
