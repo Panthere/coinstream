@@ -1,5 +1,5 @@
 from flask import render_template, flash, redirect, session, url_for, \
-        request, g, send_file
+        request, g, send_file, abort
 
 from flask_login import current_user
 from flask_qrcode import QRcode
@@ -35,6 +35,9 @@ def profile():
 
 @app.route('/login')
 def login():
+    if session['nickname']:
+            return redirect(url_for('profile'))
+
     if request.args.get('code'):
         session.clear()
         authorize_call = {
@@ -114,35 +117,6 @@ def newuser():
             + "Amp know what you see here! Especially whether we got your " \
             + "name right! You look like a new user! Hope you enjoy!"
 
-    
-
-
-@app.route('/callback2', methods=['GET', 'POST'])
-def callback2():
-    if request.method == 'POST':
-        form = RegisterForm()
-        if form.validate_on_submit():
-            new_user = User(
-                    streamlabs_atoken = session['access_token'],
-                    streamlabs_rtoken = session['refresh_token'],
-                    fiat= form.fiat_field.data,
-                    unit= form.unit_field.data,
-                    addr= form.addr_field.data,
-                    social_id = session['twitch_display'],
-                    nickname = session['twitch_name']
-
-            )
-            db.session.add(new_user)
-            db.session.commit()
-
-        return render_template(
-                'login.html',
-                title = 'Login',
-                form=form,
-                )
-
-        return redirect(url_for('index'))
-
 @app.route('/register')
 def register():
     return "no"
@@ -153,15 +127,23 @@ def donatecallback():
     return "Hello World!"
 
 @app.route('/tip/<username>')
-def tip():
-    from pycoin.key import Key
-    test_xpub = 'xpub6D4WvHcJsEdLjsbB3ot18dxHv7morZP9bBZ82Rjgb5FbpwqFtjSjywAryoTvZYgNWH3JTRWjn32sPSwWfyhZqk12VYtXPgHtyzub7NpCy1Q'
-    key = Key.from_text(test_xpub).subkey(0).subkey(0)
-    address = key.address(use_uncompressed=False)
-    btc_addr = 'bitcoin:' + address
+def tip(username):
+    u = User.query.filter_by(nickname=username.lower()).first()
+    if u:
+        from pycoin.key import Key
+        xpub = 'xpub6D4WvHcJsEdLjsbB3ot18dxHv7morZP9bBZ82Rjgb5FbpwqFtjSjywAryoTvZYgNWH3JTRWjn32sPSwWfyhZqk12VYtXPgHtyzub7NpCy1Q'
+        key = Key.from_text(xpub).subkey(0).subkey(0)
+        address = key.address(use_uncompressed=False)
+        btc_addr = 'bitcoin:' + address
 
-    print btc_addr
+        print btc_addr
 
-    return render_template(
-            'tip.html',
-            btc_addr = btc_addr)
+        return render_template(
+                'tip.html',
+                btc_addr = btc_addr)
+    return abort(404)
+
+@app.errorhandler(404)
+def handle404(e):
+    return "That user or page was not found in our system! " \
+            + "Tell them to sign up for CoinStream!"
