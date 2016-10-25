@@ -98,7 +98,7 @@ def newuser():
                 streamlabs_rtoken = session['refresh_token'],
                 fiat= "USD",
                 unit= "B",
-                addr= "xpub6D4WvHcJsEdLjsbB3ot18dxHv7morZP9bBZ82Rjgb5FbpwqFtjSjywAryoTvZYgNWH3JTRWjn32sPSwWfyhZqk12VYtXPgHtyzub7NpCy1Q",
+                xpub= "xpub6D4WvHcJsEdLjsbB3ot18dxHv7morZP9bBZ82Rjgb5FbpwqFtjSjywAryoTvZYgNWH3JTRWjn32sPSwWfyhZqk12VYtXPgHtyzub7NpCy1Q",
                 social_id = session['social_id'],
                 nickname = session['nickname']
         )
@@ -128,15 +128,13 @@ def donatecallback():
 
 @app.route('/tip/<username>')
 def tip(username):
-    u = User.query.filter_by(nickname=username.lower()).first()
+    u = User.query.filter_by(social_id=username.lower()).first()
     if u:
         from pycoin.key import Key
-        xpub = 'xpub6D4WvHcJsEdLjsbB3ot18dxHv7morZP9bBZ82Rjgb5FbpwqFtjSjywAryoTvZYgNWH3JTRWjn32sPSwWfyhZqk12VYtXPgHtyzub7NpCy1Q'
+        xpub = u.xpub
         key = Key.from_text(xpub).subkey(0).subkey(0)
         address = key.address(use_uncompressed=False)
         btc_addr = 'bitcoin:' + address
-
-        print btc_addr
 
         return render_template(
                 'tip.html',
