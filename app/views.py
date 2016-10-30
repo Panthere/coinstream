@@ -15,6 +15,7 @@ from .forms import RegisterForm
 from .models import User
 
 import time
+import sys
 import qrcode
 
 streamlabs_api_url = 'https://www.twitchalerts.com/api/v1.0/'
@@ -36,7 +37,7 @@ def profile():
 
 @app.route('/login')
 def login():
-    if session['nickname']:
+    if 'nickname' in session:
             return redirect(url_for('profile'))
 
     if request.args.get('code'):
@@ -69,12 +70,13 @@ def login():
         user_access = requests.get(api_user, params=user_get_call)
 
         session.clear()
-        session['social_id'] = user_access.json()['twitch']['display_name']
-        session['nickname'] = user_access.json()['twitch']['name']
+        session['social_id'] = user_access.json()['twitch']['name']
+        session['nickname'] = user_access.json()['twitch']['display_name']
         session['access_token'] = a_token
         session['refresh_token'] = r_token
 
-        valid_user = User.query.filter_by(social_id=session['social_id']).first()
+        valid_user = User.query.filter_by(social_id=session['social_id']) \
+                .first()
         if valid_user:
             valid_user.streamlabs_atoken = a_token
             valid_user.streamlabs_rtoken = r_token
@@ -91,32 +93,36 @@ def login():
             "&scope=donations.read+donations.create", code=302
     )
 
-@app.route('/newuser')
+@app.route('/newuser', methods=['GET', 'POST'])
 def newuser():
-    try:
-        new_user = User(
-                streamlabs_atoken = session['access_token'],
-                streamlabs_rtoken = session['refresh_token'],
-                fiat= "USD",
-                unit= "B",
-                xpub= "xpub6D4WvHcJsEdLjsbB3ot18dxHv7morZP9bBZ82Rjgb5FbpwqFtjSjywAryoTvZYgNWH3JTRWjn32sPSwWfyhZqk12VYtXPgHtyzub7NpCy1Q",
-                social_id = session['social_id'],
-                nickname = session['nickname']
-        )
-        db.session.add(new_user)
-        db.session.commit()
-    except:
-        print "Whoops!"
+    form = RegisterForm()
+    print form.xpub_field.data
+
+    if 'social_id' in session and request.method == 'POST':
+        try:
+            new_user = User(
+                    streamlabs_atoken = session['access_token'],
+                    streamlabs_rtoken = session['refresh_token'],
+                    xpub = form.xpub_field.data,
+                    social_id = session['social_id'],
+                    nickname = session['nickname'],
+                    #latest_derivation = 0
+            )
+            db.session.add(new_user)
+            db.session.commit()
+            
+            return redirect(url_for('profile'))
+        except Exception,e:
+            print str(e)
 
     try:
         username = session['nickname']
     except KeyError: 
         username = "UNKNOWN USERNAME"
 
-    return "Well hey there " + username + ". Unfortunately we " \
-            + "haven't quite finished the registration page yet! Please let " \
-            + "Amp know what you see here! Especially whether we got your " \
-            + "name right! You look like a new user! Hope you enjoy!"
+    return render_template(
+            'login.html',
+            form=form)
 
 @app.route('/register')
 def register():
@@ -133,9 +139,18 @@ def tip(username):
     if u:
         from pycoin.key import Key
         xpub = u.xpub
-        key = Key.from_text(xpub).subkey(0).subkey(0)
+        deriv = u.latest_derivation
+        key = Key.from_text(xpub).subkey(0).subkey(deriv)
         address = key.address(use_uncompressed=False)
         btc_addr = 'bitcoin:' + address
+
+        payment_verify(address)
+
+        for i in range(10):
+            print i
+            if not electrum_callback(1) == "Null":
+                u.latest_derivation = deriv + 1 
+                db.session.commit()
 
         return render_template(
                 'tip.html',
@@ -146,3 +161,31 @@ def tip(username):
 def handle404(e):
     return "That user or page was not found in our system! " \
             + "Tell them to sign up for CoinStream!"
+
+def electrum_callback(response):
+    electrum_callback.result = 0
+    if response == 1:
+        return electrum_callback.result 
+    else:
+        electrum_callback.result = json_encode(response.get('result'))
+
+def payment_verify(btc_addr):
+    from electrum import SimpleConfig, Network
+    from electrum.util import print_msg, json_encode
+
+    # start network
+    c = SimpleConfig()
+    network = Network(c)
+    network.start()
+
+    # wait until connected
+    while network.is_connecting():
+        time.sleep(0.1)
+
+    if not network.is_connected():
+        print_msg("daemon is not connected")
+        sys.exit(1)
+
+
+    network.send([('blockchain.address.subscribe',[btc_addr])], electrum_callback)
+

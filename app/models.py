@@ -26,7 +26,7 @@ class User(db.Model):
     xpub = db.Column(db.String(111))
 
     #Latest Unused Address from Derivation Path 
-    latest_derviation = db.Column(db.Integer())
+    latest_derivation = db.Column(db.Integer)
 
     # Transaction Linkage
     transactions = db.relationship(
