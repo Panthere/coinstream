@@ -15,6 +15,7 @@ class RegisterForm(Form):
             ('GBP', 'GBP'),
             ('EUR', 'EUR'),
     ]
+
     unit_field = SelectField(
             u'Preferred Coin Units', 
             choices = unit_choices,
@@ -25,7 +26,7 @@ class RegisterForm(Form):
             choices = currencies,
             validators = [Required()])
 
-    addr_field = StringField(
-            u'BitCoin Address',
+    xpub_field = StringField(
+            u'Your Extended Master Public Key',
             validators = [DataRequired()])
 

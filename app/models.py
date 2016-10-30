@@ -25,6 +25,9 @@ class User(db.Model):
     #BIP32 Extended Public Key
     xpub = db.Column(db.String(111))
 
+    #Latest Unused Address from Derivation Path 
+    latest_derviation = db.Column(db.Integer())
+
     # Transaction Linkage
     transactions = db.relationship(
             "Transaction",
