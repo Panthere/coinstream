@@ -1,6 +1,58 @@
-{% extends "base.html" %}
-{% block content %}
-{{ btc_addr }}
-<img src="{{ qrcode( btc_addr, box_size=10) }}">
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>{{ username }} - CoinStream</title>
+
+        <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+        <link href="/static/css/style.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.2/css/bootstrap-select.min.css">
+
+
+    </head>
+
+    <body>
+        <div class="container">
+            <div class="jumbotron">
+                <h1>Tip {{ username }} with BitCoin</h1> 
+                <p>This user sure does work hard on their stream and a tip into their BitCoin Wallet would very much be appreciated!</p>
+            </div>
+        </div>
+        <!-- Button trigger modal -->
+        <div class="container">
+            <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal">
+                Show BitCoin Address
+            </button>
+
+            <!-- Modal -->
+            <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="myModalLabel">Send Some BitCoin to {{ username }}</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>Please send some bitcoin to the address <strong>{{ btc_addr }}</strong>.
+                            <p>Use either the QR code directly below with your mobile wallet, or the link to launch your wallet software.
+                            <p><img src="{{ qrcode( btc_addr, box_size=10) }}">
+                            <p><a href="bitcoin:{{ btc_addr }}" type="button" class="btn btn-primary">Launch Bitcoin Wallet</a>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            <!-- <button type="button" class="btn btn-primary">Save changes</button> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.2/js/bootstrap-select.min.js"></script>
+
+    </body>
+</html>
 

@@ -1,6 +1,6 @@
 #!flask/bin/python
 from flask import render_template, flash, redirect, session, url_for, \
-        request, g, send_file, abort
+        request, g, send_file, abort, jsonify 
 
 from flask_login import current_user
 from flask_qrcode import QRcode
@@ -21,6 +21,7 @@ import qrcode
 streamlabs_api_url = 'https://www.twitchalerts.com/api/v1.0/'
 api_token = streamlabs_api_url + 'token'
 api_user = streamlabs_api_url + 'user'
+callback_result = 0
 
 
 @app.route('/')
@@ -33,7 +34,8 @@ def index():
 
 @app.route('/profile')
 def profile():
-    return "You are logged in!" + session['social_id']
+    return render_template(
+            'registerpage.html')
 
 @app.route('/login')
 def login():
@@ -144,30 +146,29 @@ def tip(username):
         address = key.address(use_uncompressed=False)
         btc_addr = 'bitcoin:' + address
 
-        payment_verify(address)
+        network,addr_hist = payment_verify(address)
 
-        for i in range(10):
-            print i
-            if not electrum_callback(1) == "Null":
-                u.latest_derivation = deriv + 1 
-                db.session.commit()
+        if addr_hist:
+            u.latest_derivation = deriv + 1 
+            db.session.commit()
+
+        network.stop()
 
         return render_template(
                 'tip.html',
-                btc_addr = btc_addr)
+                btc_addr = address,
+                username = u.nickname,
+                )
     return abort(404)
+
+@app.route('/_get_unused_address')
+def get_unused_address():
+    return jsonify(result = 1 + 2)
 
 @app.errorhandler(404)
 def handle404(e):
     return "That user or page was not found in our system! " \
             + "Tell them to sign up for CoinStream!"
-
-def electrum_callback(response):
-    electrum_callback.result = 0
-    if response == 1:
-        return electrum_callback.result 
-    else:
-        electrum_callback.result = json_encode(response.get('result'))
 
 def payment_verify(btc_addr):
     from electrum import SimpleConfig, Network
@@ -186,6 +187,6 @@ def payment_verify(btc_addr):
         print_msg("daemon is not connected")
         sys.exit(1)
 
-
-    network.send([('blockchain.address.subscribe',[btc_addr])], electrum_callback)
+    h = network.synchronous_get(('blockchain.address.get_history', [btc_addr]))
+    return network,h
 
