@@ -2,6 +2,8 @@ from hashlib import md5
 
 from app import app, db
 
+from datetime import datetime
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     
@@ -19,8 +21,6 @@ class User(db.Model):
     streamlabs_atoken = db.Column(db.String(40))
     streamlabs_rtoken = db.Column(db.String(40))
 
-    # Bitcoin Address
-    addr = db.Column(db.String(34))
 
     #BIP32 Extended Public Key
     xpub = db.Column(db.String(111))
@@ -52,10 +52,8 @@ class User(db.Model):
         except NameError:
             return str(self.id)
 
-
-
     def __repr__(self):
-        return'<User %r>' %(self.addr)
+        return'<User %r>' %(self.id)
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -66,11 +64,31 @@ class Transaction(db.Model):
     # Amount in BTC
     amount = db.Column(db.Float)
 
-    # derivation path for xpub keys
-    # derivpath = db.Column(db.String(16)) 
+    # derivation path for xpub keys, implement path
+    #TODO Implement "refresh addresses"
+    xpub = db.Column(db.String(111), nullable=False)
+    wallet_derivation = db.Column(db.Integer, nullable=False) 
 
     twi_user = db.Column(db.String(25))
     twi_message = db.Column(db.String(255))
 
     def __repr__(self):
         return '<Transaction %r>' %(self.tx_id)
+
+# Payment Request Model
+class PayReq(db.Model):
+    # Unique Database ID
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Bitcoin Address
+    addr = db.Column(db.String(34), nullable=False)
+
+    # Time of creation
+    timestamp = db.Column(db.DateTime)
+
+    def __init__(self, address):
+        self.addr = address
+        self.timestamp = datetime.utcnow()
+
+    def __repr__(self):
+        return '<PayReq %r>' %(self.addr)

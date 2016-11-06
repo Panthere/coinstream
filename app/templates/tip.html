@@ -5,19 +5,57 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title>{{ username }} - CoinStream</title>
+        <title>{{ nickname }} - CoinStream</title>
 
         <link href="/static/css/bootstrap.min.css" rel="stylesheet">
         <link href="/static/css/style.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.2/css/bootstrap-select.min.css">
 
+        <script>
+        function create_pay_req(){
+            var req = new XMLHttpRequest()
+            var somerandominteger = 0
+            req.onreadystatechange = function(){
+                if(req.readyState === 4){
+                    if (req.status != 200){
+                       // TODO: Handle Errors
+                    }
+                    else{
+                        var response = JSON.parse(req.responseText)
+                        console.log(response.btc_addr)
+                        document.getElementById('addressText').innerHTML = 
+                            "<p>Please send some bitcoin to the address <strong>" + response.btc_addr + "</strong>"
+                        jQuery('#addressQR').qrcode({
+                            text : "bitcoin:" + response.btc_addr
+                        });
+                    }
+
+                }
+
+            }
+        // Proof of concept of live-updating code on page
+        setInterval(function(){ 
+            somerandominteger++; 
+            document.getElementById('randomInt').innerHTML = somerandominteger
+        }, 3000)
+        req.open('POST', '/_create_payreq') 
+        req.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+        var postVars = 'social_id={{ social_id }}'
+        req.send(postVars)
+        return false
+        }
+        </script>
+
 
     </head>
 
-    <body>
+    <body onload ="create_pay_req()">
+        <script src="/static/js/jquery.min.js"></script>
+        <script type="text/javascript" src="/static/js/jquery-qrcode/src/jquery.qrcode.js"></script>
+        <script type="text/javascript" src="/static/js/jquery-qrcode/src/qrcode.js"></script>
         <div class="container">
             <div class="jumbotron">
-                <h1>Tip {{ username }} with BitCoin</h1> 
+                <h1>Tip {{ nickname }} with BitCoin</h1> 
                 <p>This user sure does work hard on their stream and a tip into their BitCoin Wallet would very much be appreciated!</p>
             </div>
         </div>
@@ -33,12 +71,13 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <h4 class="modal-title" id="myModalLabel">Send Some BitCoin to {{ username }}</h4>
+                            <h4 class="modal-title" id="myModalLabel">Send Some BitCoin to {{ nickname }}</h4>
                         </div>
                         <div class="modal-body">
-                            <p>Please send some bitcoin to the address <strong>{{ btc_addr }}</strong>.
+                            <div id="addressText"></div>
+                            <div id="randomInt"></div>
                             <p>Use either the QR code directly below with your mobile wallet, or the link to launch your wallet software.
-                            <p><img src="{{ qrcode( btc_addr, box_size=10) }}">
+                            <p id="addressQR">
                             <p><a href="bitcoin:{{ btc_addr }}" type="button" class="btn btn-primary">Launch Bitcoin Wallet</a>
                         </div>
                         <div class="modal-footer">
@@ -49,10 +88,7 @@
                 </div>
             </div>
         </div>
-        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
         <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.2/js/bootstrap-select.min.js"></script>
 
     </body>
-</html>
-

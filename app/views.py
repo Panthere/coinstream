@@ -8,11 +8,11 @@ from flask_qrcode import QRcode
 import requests
 
 from app import app, db, lm
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import STREAMLABS_CLIENT_ID, STREAMLABS_CLIENT_SECRET
 
 from .forms import RegisterForm
-from .models import User
+from .models import User, PayReq
 
 import time
 import sys
@@ -103,12 +103,12 @@ def newuser():
     if 'social_id' in session and request.method == 'POST':
         try:
             new_user = User(
-                    streamlabs_atoken = session['access_token'],
-                    streamlabs_rtoken = session['refresh_token'],
-                    xpub = form.xpub_field.data,
-                    social_id = session['social_id'],
-                    nickname = session['nickname'],
-                    #latest_derivation = 0
+                streamlabs_atoken = session['access_token'],
+                streamlabs_rtoken = session['refresh_token'],
+                xpub = form.xpub_field.data,
+                social_id = session['social_id'],
+                nickname = session['nickname'],
+                #latest_derivation = 0
             )
             db.session.add(new_user)
             db.session.commit()
@@ -139,54 +139,64 @@ def donatecallback():
 def tip(username):
     u = User.query.filter_by(social_id=username.lower()).first()
     if u:
-        from pycoin.key import Key
-        xpub = u.xpub
-        deriv = u.latest_derivation
-        key = Key.from_text(xpub).subkey(0).subkey(deriv)
-        address = key.address(use_uncompressed=False)
-        btc_addr = 'bitcoin:' + address
-
-        network,addr_hist = payment_verify(address)
-
-        if addr_hist:
-            u.latest_derivation = deriv + 1 
-            db.session.commit()
-
-        network.stop()
+        #address = create_payment_request(u)['address']
 
         return render_template(
                 'tip.html',
-                btc_addr = address,
-                username = u.nickname,
+                nickname = u.nickname,
+                social_id = u.social_id
                 )
     return abort(404)
 
-@app.route('/_get_unused_address')
-def get_unused_address():
-    return jsonify(result = 1 + 2)
+def get_unused_address(social_id, deriv):
+    from bitcoin import *
+    from pycoin.key import Key
+
+    userdata = User.query.filter_by(social_id = social_id).first()
+
+    # Pull BTC Address from given user data 
+    key = Key.from_text(userdata.xpub).subkey(0). \
+            subkey(deriv)
+    address = key.address(use_uncompressed=False)
+
+    # Check for existing payment request, delete if older than 5m.
+    payment_request = PayReq.query.filter_by(addr=address).first()
+    if payment_request:
+        req_timestamp = payment_request.timestamp
+        now_timestamp = datetime.utcnow()
+        delta_timestamp = now_timestamp - req_timestamp
+        if delta_timestamp > timedelta(seconds=60*5):
+            db.session.delete(payment_request)
+            db.session.commit()
+            payment_request = None
+
+    if not history(address):
+        if not payment_request:
+            return address
+        else: 
+            print "Address has payment request..."
+            print "Address Derivation: ", userdata.latest_derivation
+            return get_unused_address(social_id, deriv + 1)
+    else:
+        print "Address has blockchain history, searching new address..."
+        print "Address Derivation: ", userdata.latest_derivation
+        userdata.latest_derivation = userdata.latest_derivation + 1
+        return get_unused_address(social_id, deriv + 1)
+
+@app.route('/_create_payreq', methods=['POST'])
+def create_payment_request():
+    social_id = request.form['social_id']
+    deriv = User.query.filter_by(social_id = social_id).first(). \
+            latest_derivation
+    address = get_unused_address(social_id, deriv)
+    new_payment_request = PayReq(address)
+    db.session.add(new_payment_request)
+    db.session.commit()
+    return jsonify(
+            {'btc_addr': address}
+            )
 
 @app.errorhandler(404)
 def handle404(e):
     return "That user or page was not found in our system! " \
             + "Tell them to sign up for CoinStream!"
-
-def payment_verify(btc_addr):
-    from electrum import SimpleConfig, Network
-    from electrum.util import print_msg, json_encode
-
-    # start network
-    c = SimpleConfig()
-    network = Network(c)
-    network.start()
-
-    # wait until connected
-    while network.is_connecting():
-        time.sleep(0.1)
-
-    if not network.is_connected():
-        print_msg("daemon is not connected")
-        sys.exit(1)
-
-    h = network.synchronous_get(('blockchain.address.get_history', [btc_addr]))
-    return network,h
-
