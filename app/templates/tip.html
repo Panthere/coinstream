@@ -7,88 +7,113 @@
 
         <title>{{ nickname }} - CoinStream</title>
 
+        <link href="/static/css/floatlabel.css" rel="stylesheet">
         <link href="/static/css/bootstrap.min.css" rel="stylesheet">
         <link href="/static/css/style.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.2/css/bootstrap-select.min.css">
 
         <script>
-        function create_pay_req(){
-            var req = new XMLHttpRequest()
-            var somerandominteger = 0
-            req.onreadystatechange = function(){
-                if(req.readyState === 4){
-                    if (req.status != 200){
-                       // TODO: Handle Errors
-                    }
-                    else{
-                        var response = JSON.parse(req.responseText)
-                        console.log(response.btc_addr)
-                        document.getElementById('addressText').innerHTML = 
-                            "<p>Please send some bitcoin to the address <strong>" + response.btc_addr + "</strong>"
-                        jQuery('#addressQR').qrcode({
-                            text : "bitcoin:" + response.btc_addr
-                        });
-                    }
-
-                }
-
+function create_pay_req(){
+    var req = new XMLHttpRequest()
+    var somerandominteger = 0
+    req.onreadystatechange = function(){
+        if(req.readyState === 4){
+            if (req.status != 200){
+                // TODO: Handle Errors
             }
-        // Proof of concept of live-updating code on page
-        setInterval(function(){ 
-            somerandominteger++; 
-            document.getElementById('randomInt').innerHTML = somerandominteger
-        }, 3000)
-        req.open('POST', '/_create_payreq') 
+            else{
+                var response = JSON.parse(req.responseText)
+                    console.log(response.btc_addr)
+                    document.getElementById('addressText').innerHTML = 
+                    "<p>Please send some bitcoin to the address <strong>" + response.btc_addr + "</strong>" +
+                    "<p>Use either the QR code directly below with your mobile wallet, or the link to launch your wallet software."
+                    jQuery('#addressQR').qrcode({
+                        text : "bitcoin:" + response.btc_addr
+                    });
+                    document.getElementById('addressLink').innerHTML = 
+                        "<p><a href=bitcoin:" + response.btc_addr + "type=\"button\" class=\"btn btn-primary\">Launch Bitcoin Wallet</a>"
+            }
+
+        }
+
+    }
+    // Proof of concept of live-updating code on page
+    //<p><a href="bitcoin:{{ btc_addr }}" type="button" class="btn btn-primary">Launch Bitcoin Wallet</a>
+    setInterval(function(){ 
+        somerandominteger++; 
+        document.getElementById('randomInt').innerHTML = somerandominteger
+    }, 3000)
+    req.open('POST', '/_create_payreq') 
         req.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
-        var postVars = 'social_id={{ social_id }}'
+        var user_display = document.getElementById('user_display').value
+        var user_identifier = document.getElementById('user_identifier').value
+        var user_message = document.getElementById('user_message').value
+        var postVars = "social_id={{ social_id }}&user_display="+user_display+"&user_identifier="+user_identifier+"&user_message="+user_message
         req.send(postVars)
         return false
-        }
+}
         </script>
-
 
     </head>
 
-    <body onload ="create_pay_req()">
+    <body>
         <script src="/static/js/jquery.min.js"></script>
         <script type="text/javascript" src="/static/js/jquery-qrcode/src/jquery.qrcode.js"></script>
         <script type="text/javascript" src="/static/js/jquery-qrcode/src/qrcode.js"></script>
+        <scr>
         <div class="container">
             <div class="jumbotron">
                 <h1>Tip {{ nickname }} with BitCoin</h1> 
                 <p>This user sure does work hard on their stream and a tip into their BitCoin Wallet would very much be appreciated!</p>
             </div>
         </div>
-        <!-- Button trigger modal -->
         <div class="container">
-            <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal">
-                Show BitCoin Address
-            </button>
+            <form role="form" id="user_form" action="#" onsubmit="create_pay_req()">
+                <div class="form-group float-label-control">
+                    <label for="">Username:</label>
+                    <input type="text" class="form-control" id="user_display" placeholder="Optional: If left empty will show as &quot;AnonymousBitCoin&quot;"/>
+                </div>
+                <div class="form-group float-label-control">
+                    <label for="user_identifier">Email:</label>
+                    <input id="user_identifier" type="text" class="form-control" placeholder="Optional: If empty will be grouped as anonymous BTC tip."/>
+                </div>
+                <div class="form-group float-label-control">
+                    <label for="user_message">Message:</label>
+                    <input id="user_message" type="text" class="form-control" placeholder="Optional: Maximum of 255 Characters"/>
+                </div>
+                    <button type="submit" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal">
+                        Show BitCoin Address
+                    </button>
 
-            <!-- Modal -->
-            <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <h4 class="modal-title" id="myModalLabel">Send Some BitCoin to {{ nickname }}</h4>
-                        </div>
-                        <div class="modal-body">
-                            <div id="addressText"></div>
-                            <div id="randomInt"></div>
-                            <p>Use either the QR code directly below with your mobile wallet, or the link to launch your wallet software.
-                            <p id="addressQR">
-                            <p><a href="bitcoin:{{ btc_addr }}" type="button" class="btn btn-primary">Launch Bitcoin Wallet</a>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                            <!-- <button type="button" class="btn btn-primary">Save changes</button> -->
+            </form>
+                </div>
+                <!-- Button trigger modal -->
+                <div class="container">
+                    <!-- Modal -->
+                    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                    <h4 class="modal-title" id="myModalLabel">Send Some BitCoin to {{ nickname }}</h4>
+                                </div>
+                                <div class="modal-body">
+                                    <div id="addressText"><strong>Loading...</strong></div>
+                                    <div id="randomInt"></div>
+                                    <div id="addressQR"> </div>
+                                    <div id="addressLink"></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                    <!-- <button type="button" class="btn btn-primary">Save changes</button> -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.2/js/bootstrap-select.min.js"></script>
+                <script src="/static/js/floatlabel.js"></script>
+                <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.11.2/js/bootstrap-select.min.js"></script>
 
     </body>
+</html>

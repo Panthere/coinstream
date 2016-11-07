@@ -149,6 +149,12 @@ def tip(username):
     return abort(404)
 
 def get_unused_address(social_id, deriv):
+    '''
+    Need to be careful about when to move up the latest_derivation listing.
+    Figure only incrementing the database entry when blockchain activity is
+    found is the least likely to create large gaps of empty addresses in
+    someone's BTC Wallet.
+    '''
     from bitcoin import *
     from pycoin.key import Key
 
@@ -175,12 +181,13 @@ def get_unused_address(social_id, deriv):
             return address
         else: 
             print "Address has payment request..."
-            print "Address Derivation: ", userdata.latest_derivation
+            print "Address Derivation: ", deriv
             return get_unused_address(social_id, deriv + 1)
     else:
         print "Address has blockchain history, searching new address..."
         print "Address Derivation: ", userdata.latest_derivation
         userdata.latest_derivation = userdata.latest_derivation + 1
+        db.session.commit()
         return get_unused_address(social_id, deriv + 1)
 
 @app.route('/_create_payreq', methods=['POST'])
@@ -189,7 +196,13 @@ def create_payment_request():
     deriv = User.query.filter_by(social_id = social_id).first(). \
             latest_derivation
     address = get_unused_address(social_id, deriv)
-    new_payment_request = PayReq(address)
+    print "Hello World!"
+    new_payment_request = PayReq(
+            address,
+            user_display=request.form['user_display'],
+            user_identifier=request.form['user_identifier']+"_btc",
+            user_message=request.form['user_message']
+            )
     db.session.add(new_payment_request)
     db.session.commit()
     return jsonify(

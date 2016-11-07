@@ -66,8 +66,8 @@ class Transaction(db.Model):
 
     # derivation path for xpub keys, implement path
     #TODO Implement "refresh addresses"
-    xpub = db.Column(db.String(111), nullable=False)
-    wallet_derivation = db.Column(db.Integer, nullable=False) 
+    # xpub = db.Column(db.String(111), nullable=False)
+    # wallet_derivation = db.Column(db.Integer, nullable=False) 
 
     twi_user = db.Column(db.String(25))
     twi_message = db.Column(db.String(255))
@@ -86,9 +86,24 @@ class PayReq(db.Model):
     # Time of creation
     timestamp = db.Column(db.DateTime)
 
-    def __init__(self, address):
+    # User Fields 
+    user_display = db.Column(db.String(25))
+    user_identifier = db.Column(db.String())
+    user_message = db.Column(db.String(255))
+
+
+    def __init__(self, address, user_display=None, user_identifier=None,
+            user_message=None):
         self.addr = address
         self.timestamp = datetime.utcnow()
+        self.user_display = 'AnonymousBitCoin'
+        self.user_identifier = 'CoinStream-Tip-PleaseCheckYourWallet'
+        if user_display:
+            self.user_display = user_display
+        if user_identifier:
+            self.user_identifier = user_identifier
+        if user_message:
+            self.user_message = user_message
 
     def __repr__(self):
         return '<PayReq %r>' %(self.addr)
