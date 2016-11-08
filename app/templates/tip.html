@@ -15,7 +15,6 @@
         <script>
 function create_pay_req(){
     var req = new XMLHttpRequest()
-    var somerandominteger = 0
     req.onreadystatechange = function(){
         if(req.readyState === 4){
             if (req.status != 200){
@@ -23,34 +22,50 @@ function create_pay_req(){
             }
             else{
                 var response = JSON.parse(req.responseText)
-                    console.log(response.btc_addr)
-                    document.getElementById('addressText').innerHTML = 
-                    "<p>Please send some bitcoin to the address <strong>" + response.btc_addr + "</strong>" +
-                    "<p>Use either the QR code directly below with your mobile wallet, or the link to launch your wallet software."
-                    jQuery('#addressQR').qrcode({
-                        text : "bitcoin:" + response.btc_addr
-                    });
-                    document.getElementById('addressLink').innerHTML = 
-                        "<p><a href=bitcoin:" + response.btc_addr + "type=\"button\" class=\"btn btn-primary\">Launch Bitcoin Wallet</a>"
+                console.log(response.btc_addr)
+                document.getElementById('addressText').innerHTML = 
+                "<p>Please send some bitcoin to the address <strong>" + response.btc_addr + "</strong>" +
+                "<p>Use either the QR code directly below with your mobile wallet, or the link to launch your wallet software."
+                jQuery('#addressQR').qrcode({
+                    text : "bitcoin:" + response.btc_addr
+                });
+                document.getElementById('addressLink').innerHTML = 
+                    "<p><a href=\"bitcoin:" + response.btc_addr + "\"type=\"button\" class=\"btn btn-primary\">Launch Bitcoin Wallet</a>"
+                var isPaid = setInterval(function(){ 
+                    verify_payment(response.btc_addr)
+                }, 5000)
             }
-
         }
-
     }
     // Proof of concept of live-updating code on page
     //<p><a href="bitcoin:{{ btc_addr }}" type="button" class="btn btn-primary">Launch Bitcoin Wallet</a>
-    setInterval(function(){ 
-        somerandominteger++; 
-        document.getElementById('randomInt').innerHTML = somerandominteger
-    }, 3000)
     req.open('POST', '/_create_payreq') 
-        req.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
-        var user_display = document.getElementById('user_display').value
-        var user_identifier = document.getElementById('user_identifier').value
-        var user_message = document.getElementById('user_message').value
-        var postVars = "social_id={{ social_id }}&user_display="+user_display+"&user_identifier="+user_identifier+"&user_message="+user_message
-        req.send(postVars)
-        return false
+    req.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+    var user_display = document.getElementById('user_display').value
+    var user_identifier = document.getElementById('user_identifier').value
+    var user_message = document.getElementById('user_message').value
+    var postVars = "social_id={{ social_id }}&user_display="+user_display+"&user_identifier="+user_identifier+"&user_message="+user_message
+    req.send(postVars)
+    return false
+}
+
+function verify_payment(btc_addr){
+    var req = new XMLHttpRequest()
+    req.onreadystatechange = function(){
+        if(req.readyState === 4){
+            if (req.status != 200){
+                // TODO: Handle Errors
+            }
+            else{
+
+            }
+        }
+    }
+    // Do stuff here
+    req.open('POST', '/_verify_payment') 
+    req.setRequestHeader("Content-type", "application/x-www-form-urlencoded")
+    var postVars = "btc_addr="+btc_addr+"&social_id={{ social_id }}"
+    req.send(postVars)
 }
         </script>
 
