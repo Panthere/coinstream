@@ -1,9 +1,9 @@
-from flask_wtf import Form
+from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, TextAreaField, SelectField
 from wtforms.validators import Required, Length, DataRequired
 
 
-class RegisterForm(Form):
+class RegisterForm(FlaskForm):
     unit_choices = [
             ('B', 'BTC'), 
             ('m', 'mBTC'), 
@@ -26,7 +26,17 @@ class RegisterForm(Form):
             choices = currencies,
             validators = [Required()])
 
+    user_display_text_field = StringField(
+            u'Display Text for Tip Page',
+            )
+
     xpub_field = StringField(
             u'Your Extended Master Public Key',
             validators = [DataRequired()])
 
+class ProfileForm(FlaskForm):
+    xpub_field = StringField(
+            u'New Extended/Master Public Key')
+
+    user_display_text_field = StringField(
+            u'Text to display on your tipping page.')

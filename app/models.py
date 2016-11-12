@@ -28,6 +28,13 @@ class User(db.Model):
     #Latest Unused Address from Derivation Path 
     latest_derivation = db.Column(db.Integer)
 
+    # Display Text for Tip Page
+    display_text = db.Column(db.String(500),
+            default="This user sure does work hard on their stream "+\
+                "and a tip into their BitCoin Wallet would very much be "+\
+                "appreciated!",
+            nullable=False)
+
     # Transaction Linkage
     transactions = db.relationship(
             "Transaction",

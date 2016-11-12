@@ -1,4 +1,4 @@
-#!flask/bin/python
+#!/usr/bin/python
 
 # db_create script taken from Github user Miguel Grinberg
 # github.com/miguelgrinberg

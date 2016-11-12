@@ -19,6 +19,14 @@ Please fill out relevant information below.<br><br>
             name=xpub_field>
         </div>
 
+        <div class="input-group input-group-sm col-lg-6">
+            <textarea type="text" rows="3"
+            class="form-control" 
+            placeholder="What do you want your tippers to see on your page?" 
+            aria-describedby="basic-addon2"
+            name=user_display_text_field></textarea>
+        </div>
+
         <!-- Single button -->
             <select class="selectpicker" name=fiat_field>
                 {% for item in form.fiat_field %}
