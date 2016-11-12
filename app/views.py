@@ -9,7 +9,7 @@ from app import app, db, lm
 from datetime import datetime, timedelta
 from config import STREAMLABS_CLIENT_ID, STREAMLABS_CLIENT_SECRET
 
-from .forms import RegisterForm
+from .forms import RegisterForm, ProfileForm
 from .models import User, PayReq
 
 from pycoin.key import Key
@@ -31,15 +31,25 @@ callback_result = 0
 @app.route('/')
 @app.route('/index')
 def index():
-    user = { 'nickname': 'Alex' }
+    user = { 'nickname': 'Amp' }
     return render_template(
             'index.html',
             user=user)
 
-@app.route('/profile')
+@app.route('/profile', methods=['GET', 'POST'])
 def profile():
+    if not "social_id" in session:
+        return redirect(url_for('index'))
+    form = ProfileForm() 
+    if request.method == "POST":
+        print "Hello world!"
+
     return render_template(
-            'registerpage.html')
+            'registerpage.html',
+            form=form,
+            social_id=session['social_id'],
+            nickname=session['nickname']
+            )
 
 @app.route('/login')
 def login():
@@ -112,7 +122,7 @@ def newuser():
                 xpub = form.xpub_field.data,
                 social_id = session['social_id'],
                 nickname = session['nickname'],
-                #latest_derivation = 0
+                latest_derivation = 0
             )
             db.session.add(new_user)
             db.session.commit()
@@ -198,7 +208,6 @@ def create_payment_request():
     deriv = User.query.filter_by(social_id = social_id).first(). \
             latest_derivation
     address = get_unused_address(social_id, deriv)
-    print "Hello World!"
     new_payment_request = PayReq(
             address,
             user_display=request.form['user_display'],
@@ -216,17 +225,19 @@ def verify_payment():
     btc_addr = request.form['btc_addr']
     social_id = request.form['social_id']
     payrec_check = PayReq.query.filter_by(addr=btc_addr).first()
+    print "Checking for payment"
+    payment_check_return = {
+            'payment_verified' : "FALSE"
+    }
+
     if bitcoin.history(btc_addr) and payrec_check:
-        print payrec_check
+        payment_check_return['payment_verified'] = "TRUE"
+        print "Payment Found!"
         payment_notify(social_id, payrec_check)
         db.session.delete(payrec_check)
         db.session.commit()
-
-    return jsonify(
-        { 
-            'verified'     :'FALSE',
-        }
-    )
+    print payment_check_return
+    return jsonify(payment_check_return)
 
 def payment_notify(social_id, payrec):
     user = User.query.filter_by(social_id=social_id).first()
