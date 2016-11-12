@@ -23,9 +23,11 @@ function create_pay_req(){
             else{
                 var response = JSON.parse(req.responseText)
                 console.log(response.btc_addr)
-                document.getElementById('addressText').innerHTML = 
-                "<p>Please send some bitcoin to the address <strong>" + response.btc_addr + "</strong>" +
-                "<p>Use either the QR code directly below with your mobile wallet, or the link to launch your wallet software."
+                $('#addressText').html(
+                //document.getElementById('addressText').innerHTML = 
+                "<p>Please send some bitcoin to the address <strong>" + response.btc_addr + "</strong></p>" +
+                "<p>Use either the QR code directly below with your mobile wallet, or the link to launch your wallet software.</p>" +
+                "<p><strong>Please note that the payment will only be tracked while this page is open, and you have a five minute time limit. If either the page gets closed, or five minutes elapses after you see the Bitcoin address, please refresh the page to make a new payment request.</strong></p>");
                 jQuery('#addressQR').qrcode({
                     text : "bitcoin:" + response.btc_addr
                 });
@@ -66,7 +68,8 @@ function verify_payment(btc_addr){
                 }
                 else{
                     clearTimeout(isPaid);
-                    document.getElementById('modal-body').innerHTML = "<strong>Payment Verified! {{ nickname }} thanks you very much for the tip!</strong>"
+                    $('#modal-body').html(
+                    "<strong>Payment Verified! {{ nickname }} thanks you very much for the tip!</strong>")
                 }
             }
         }
@@ -88,7 +91,7 @@ function verify_payment(btc_addr){
         <div class="container">
             <div class="jumbotron">
                 <h1>Tip {{ nickname }} with BitCoin</h1> 
-                <p>This user sure does work hard on their stream and a tip into their BitCoin Wallet would very much be appreciated!</p>
+                <p>{{ display_text }}</p>
             </div>
         </div>
         <div class="container">

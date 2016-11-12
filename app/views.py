@@ -42,7 +42,13 @@ def profile():
         return redirect(url_for('index'))
     form = ProfileForm() 
     if request.method == "POST":
-        print "Hello world!"
+        u = User.query.filter_by(social_id=session['social_id']).first()
+        if form.xpub_field.data:
+            u.xpub = form.xpub_field.data
+            u.latest_derivation = 0
+        if form.user_display_text_field.data:
+            u.display_text = form.user_display_text_field.data
+        db.session.commit()
 
     return render_template(
             'registerpage.html',
@@ -83,36 +89,6 @@ def login():
                 'access_token' : a_token
         }
 
-        user_access = requests.get(api_user, params=user_get_call)
-
-        session.clear()
-        session['social_id'] = user_access.json()['twitch']['name']
-        session['nickname'] = user_access.json()['twitch']['display_name']
-        session['access_token'] = a_token
-        session['refresh_token'] = r_token
-
-        valid_user = User.query.filter_by(social_id=session['social_id']) \
-                .first()
-        if valid_user:
-            valid_user.streamlabs_atoken = a_token
-            valid_user.streamlabs_rtoken = r_token
-            db.session.commit()
-            return redirect(url_for('profile'))
-        else:
-            return redirect(url_for('newuser'))
-
-    return redirect(
-            "http://www.twitchalerts.com/api/v1.0/authorize?client_id=" +
-            STREAMLABS_CLIENT_ID +
-            "&redirect_uri=http://coinstream.co:5000/login" +
-            "&response_type=code" +
-            "&scope=donations.read+donations.create", code=302
-    )
-
-@app.route('/newuser', methods=['GET', 'POST'])
-def newuser():
-    form = RegisterForm()
-    print form.xpub_field.data
 
     if 'social_id' in session and request.method == 'POST':
         try:
@@ -122,7 +98,8 @@ def newuser():
                 xpub = form.xpub_field.data,
                 social_id = session['social_id'],
                 nickname = session['nickname'],
-                latest_derivation = 0
+                latest_derivation = 0,
+                display_text = form.user_display_text_field.data
             )
             db.session.add(new_user)
             db.session.commit()
@@ -151,15 +128,16 @@ def donatecallback():
 
 @app.route('/tip/<username>')
 def tip(username):
-    u = User.query.filter_by(social_id=username.lower()).first()
-    if u:
-        #address = create_payment_request(u)['address']
-
-        return render_template(
-                'tip.html',
-                nickname = u.nickname,
-                social_id = u.social_id
-                )
+    if username.lower() == "amperture" \
+            or username.lower() == "darabidduckie":
+        u = User.query.filter_by(social_id=username.lower()).first()
+        if u:
+            return render_template(
+                    'tip.html',
+                    nickname = u.nickname,
+                    social_id = u.social_id,
+                    display_text = u.display_text
+                    )
     return abort(404)
 
 def get_unused_address(social_id, deriv):
@@ -236,7 +214,6 @@ def verify_payment():
         payment_notify(social_id, payrec_check)
         db.session.delete(payrec_check)
         db.session.commit()
-    print payment_check_return
     return jsonify(payment_check_return)
 
 def payment_notify(social_id, payrec):
