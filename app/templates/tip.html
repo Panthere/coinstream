@@ -35,10 +35,17 @@
 			var userDisplay = $('#user_display').val();
 			var userIdentifier = $('#user_identifier').val();
 			var userMessage = $('#user_message').val();
-			var postVars = "social_id={{ social_id }}&user_display="+userDisplay+"&user_identifier="+userIdentifier+"&user_message="+userMessage;
+			var socialId = '{{ social_id }}';
 			
 			// Create a new request to our server
-			var resp = $.post('/_create_payreq', postVars, 
+			var resp = $.post('/_create_payreq', 
+			// This will be formatted as a 'body' string in the post request
+				{
+					social_id: socialId,
+					user_display: userDisplay,
+					user_identifier: userIdentifier,
+					user_message: userMessage
+				}, 
 				function (response)
 				{
 					console.log(response.btc_addr);
@@ -74,9 +81,15 @@
 		}
 
 		function verifyPayment(btc_addr){
+			// Does this work? I have no idea!
+			var socialId = '{{ social_id }}';
 			var postVars = "btc_addr="+btc_addr+"&social_id={{ social_id }}";
 			
-			var resp = $.post('/_verify_payment', postVars, 
+			var resp = $.post('/_verify_payment',
+				{
+					social_id: socialId,
+					btc_addr: btc_addr
+				}, 
 				function (response)
 				{
 					// Debug
